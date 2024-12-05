@@ -8,7 +8,12 @@ module.exports = new Sequelize(process.env.DB_DATABASE,
     host: process.env.DB_HOST,
     dialect: process.env.DB_DIALECT,
     
-    dialectOptions: (process.env.NODE_ENV=== 'DEVELOPMENT'? {}:{
+    dialectOptions: (process.env.NODE_ENV=== 'DEVELOPMENT'? {
+      ssl: {
+      require: true,
+      rejectUnauthorized: false
+      }
+    }:{
       ssl: {
         require: true,
         rejectUnauthorized: false
