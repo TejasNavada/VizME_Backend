@@ -21,7 +21,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 22
           source: '.'
-          target: '/home/ec2-user/vizmr_backend'
+          target: '/home/ec2-user/vizme_backend'
 
       - name: Deploy script
         uses: appleboy/ssh-action@master
