@@ -4,6 +4,7 @@
 /node_modules
 /.env
 /.pnp
+/vizme.pem
 .pnp.js
 private.key
 certificate.crt
