@@ -51,18 +51,18 @@ app.use(passport.initialize())
 app.use(passport.session())
 // setupSwagger(app)
 
-// const privateKey = fs.readFileSync('certificate/private.key', 'utf8')
-// const certificate = fs.readFileSync('certificate/certificate.crt', 'utf8')
-// const caBundle = fs.readFileSync('certificate/ca_bundle.crt', 'utf8')
+const privateKey = fs.readFileSync('certificate/private.key', 'utf8')
+const certificate = fs.readFileSync('certificate/certificate.crt', 'utf8')
+const caBundle = fs.readFileSync('certificate/ca_bundle.crt', 'utf8')
 
-// const credentials = { key: privateKey, cert: certificate, ca: caBundle }
+const credentials = { key: '', cert: '' }
 
 const mode = process.env.NODE_ENV
 let server = null
 if (mode && mode === 'DEVELOPMENT') {
   server = http.createServer(app)
 } else {
-  //server = https.createServer(credentials, app)
+  server = https.createServer(credentials, app)
 }
 const io = socketIo(server, {
   cors: {
