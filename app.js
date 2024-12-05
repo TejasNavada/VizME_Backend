@@ -51,9 +51,9 @@ app.use(passport.initialize())
 app.use(passport.session())
 // setupSwagger(app)
 
-const privateKey = fs.readFileSync('certificate/private.key', 'utf8')
-const certificate = fs.readFileSync('certificate/certificate.crt', 'utf8')
-const caBundle = fs.readFileSync('certificate/ca_bundle.crt', 'utf8')
+// const privateKey = fs.readFileSync('certificate/private.key', 'utf8')
+// const certificate = fs.readFileSync('certificate/certificate.crt', 'utf8')
+// const caBundle = fs.readFileSync('certificate/ca_bundle.crt', 'utf8')
 
 const credentials = { key: '', cert: '' }
 
