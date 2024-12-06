@@ -51,11 +51,11 @@ app.use(passport.initialize())
 app.use(passport.session())
 // setupSwagger(app)
 
-// const privateKey = fs.readFileSync('certificate/private.key', 'utf8')
-// const certificate = fs.readFileSync('certificate/certificate.crt', 'utf8')
-// const caBundle = fs.readFileSync('certificate/ca_bundle.crt', 'utf8')
+const privateKey = fs.readFileSync(process.env.CREDENTIALS_KEY, 'utf8')
+const certificate = fs.readFileSync(process.env.CREDENTIALS_CERT, 'utf8')
+const caBundle = fs.readFileSync(process.env.CREDENTIALS_CA, 'utf8')
 
-const credentials = { key: '', cert: '' }
+const credentials = { key: privateKey, cert: certificate, ca: caBundle }
 
 const mode = process.env.NODE_ENV
 let server = null
