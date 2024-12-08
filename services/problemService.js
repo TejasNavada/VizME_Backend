@@ -129,22 +129,71 @@ exports.getSubmissions = async (problemId) => {
 	try {
 		const [results, metadata] = await sequelize.query(
 			`
-SELECT s1.*, s2.num_subs, m1.num_messages
-FROM submissions AS s1
-JOIN (
-SELECT "userId", MAX(created_time) AS max_created_time, COUNT("userId") as num_subs
-FROM submissions
-WHERE "problemId" = :problemId
-GROUP BY "userId"
-) AS s2 ON s1."userId" = s2."userId" AND s1.created_time = s2.max_created_time
-LEFT OUTER JOIN (
-SELECT sender_id, COUNT(sender_id) as num_messages
-from messages
-WHERE "problemId" = :problemId
-GROUP BY sender_id
-) AS m1 ON s1."userId" = m1.sender_id
-WHERE s1."problemId" = :problemId
-    `,
+WITH RecentSubmissions AS (
+    SELECT 
+        "userId", 
+        "pass", 
+        "created_time",
+		"submissionId",
+		"problemId",
+        ROW_NUMBER() OVER (PARTITION BY "userId" ORDER BY "created_time" DESC) AS row_num
+    FROM 
+        submissions
+    WHERE 
+        "problemId" = :problemId AND "userId" <> 1
+),
+SubmissionCounts AS (
+    SELECT 
+        "userId",
+        COUNT(*) AS "num_subs"
+    FROM 
+        submissions
+    WHERE 
+        "problemId" = :problemId AND "userId" <> 1
+    GROUP BY 
+        "userId"
+),
+MessageCounts AS (
+    SELECT 
+        sender_id AS "userId",
+        COUNT(*) AS "num_messages"
+    FROM 
+        messages
+    WHERE 
+        "problemId" = :problemId AND sender_id <> 1
+    GROUP BY 
+        sender_id
+),
+AllUsers AS (
+    SELECT DISTINCT "userId" FROM submissions WHERE "problemId" = :problemId AND "userId" <> 1
+    UNION
+    SELECT DISTINCT sender_id AS "userId" FROM messages WHERE "problemId" = :problemId AND sender_id <> 1
+)
+SELECT 
+    au."userId",
+    rs."pass",
+    rs."created_time",
+	rs."submissionId",
+	rs."problemId",
+    COALESCE(sc."num_subs", 0) AS "num_subs",
+    COALESCE(mc."num_messages", 0) AS "num_messages"
+FROM 
+    AllUsers au
+LEFT JOIN 
+    RecentSubmissions rs
+ON 
+    au."userId" = rs."userId" AND rs.row_num = 1
+LEFT JOIN 
+    SubmissionCounts sc
+ON 
+    au."userId" = sc."userId"
+LEFT JOIN 
+    MessageCounts mc
+ON 
+    au."userId" = mc."userId";
+
+
+`,
 			{
 				replacements: { problemId: problemId },
 			}
@@ -162,21 +211,69 @@ exports.getUserSubmissions = async (problemId,userId) => {
 	try {
 		const [results, metadata] = await sequelize.query(
 			`
-SELECT s1.*, s2.num_subs, m1.num_messages
-FROM submissions AS s1
-JOIN (
-SELECT "userId", MAX(created_time) AS max_created_time, COUNT("userId") as num_subs
-FROM submissions
-WHERE "problemId" = :problemId AND "userId" = :userId
-GROUP BY "userId"
-) AS s2 ON s1."userId" = s2."userId" AND s1.created_time = s2.max_created_time
-LEFT OUTER JOIN (
-SELECT sender_id, COUNT(sender_id) as num_messages
-from messages
-WHERE "problemId" = :problemId AND "sender_id" = :userId
-GROUP BY sender_id
-) AS m1 ON s1."userId" = m1.sender_id
-WHERE s1."problemId" = :problemId AND s1."userId" = :userId
+WITH RecentSubmissions AS (
+    SELECT 
+        "userId", 
+        "pass", 
+        "created_time",
+		"submissionId",
+		"problemId",
+        ROW_NUMBER() OVER (PARTITION BY "userId" ORDER BY "created_time" DESC) AS row_num
+    FROM 
+        submissions
+    WHERE 
+        "problemId" = :problemId AND "userId" = :sender_id
+),
+SubmissionCounts AS (
+    SELECT 
+        "userId",
+        COUNT(*) AS "num_subs"
+    FROM 
+        submissions
+    WHERE 
+        "problemId" = :problemId AND "userId" = :sender_id
+    GROUP BY 
+        "userId"
+),
+MessageCounts AS (
+    SELECT 
+        sender_id AS "userId",
+        COUNT(*) AS "num_messages"
+    FROM 
+        messages
+    WHERE 
+        "problemId" = :problemId AND sender_id = :sender_id
+    GROUP BY 
+        sender_id
+),
+AllUsers AS (
+    SELECT DISTINCT "userId" FROM submissions WHERE "problemId" = :problemId AND "userId" = :sender_id
+    UNION
+    SELECT DISTINCT sender_id AS "userId" FROM messages WHERE "problemId" = :problemId AND sender_id = :sender_id
+)
+SELECT 
+    au."userId",
+    rs."pass",
+    rs."created_time",
+	rs."submissionId",
+	rs."problemId",
+    COALESCE(sc."num_subs", 0) AS "num_subs",
+    COALESCE(mc."num_messages", 0) AS "num_messages"
+FROM 
+    AllUsers au
+LEFT JOIN 
+    RecentSubmissions rs
+ON 
+    au."userId" = rs."userId" AND rs.row_num = 1
+LEFT JOIN 
+    SubmissionCounts sc
+ON 
+    au."userId" = sc."userId"
+LEFT JOIN 
+    MessageCounts mc
+ON 
+    au."userId" = mc."userId";
+
     `,
 			{
 				replacements: { problemId: problemId,userId:userId },
