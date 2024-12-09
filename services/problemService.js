@@ -134,13 +134,13 @@ WITH RecentSubmissions AS (
         "userId", 
         "pass", 
         "created_time",
-		"submissionId",
-		"problemId",
+        "submissionId",
+        "problemId",
         ROW_NUMBER() OVER (PARTITION BY "userId" ORDER BY "created_time" DESC) AS row_num
     FROM 
         submissions
     WHERE 
-        "problemId" = :problemId AND "userId" <> 1
+        "problemId" = :problemId AND "userId" NOT IN (1, 2)
 ),
 SubmissionCounts AS (
     SELECT 
@@ -149,7 +149,7 @@ SubmissionCounts AS (
     FROM 
         submissions
     WHERE 
-        "problemId" = :problemId AND "userId" <> 1
+        "problemId" = :problemId AND "userId" NOT IN (1, 2)
     GROUP BY 
         "userId"
 ),
@@ -160,21 +160,21 @@ MessageCounts AS (
     FROM 
         messages
     WHERE 
-        "problemId" = :problemId AND sender_id <> 1
+        "problemId" = :problemId AND sender_id NOT IN (1, 2)
     GROUP BY 
         sender_id
 ),
 AllUsers AS (
-    SELECT DISTINCT "userId" FROM submissions WHERE "problemId" = :problemId AND "userId" <> 1
+    SELECT DISTINCT "userId" FROM submissions WHERE "problemId" = :problemId AND "userId" NOT IN (1, 2)
     UNION
-    SELECT DISTINCT sender_id AS "userId" FROM messages WHERE "problemId" = :problemId AND sender_id <> 1
+    SELECT DISTINCT sender_id AS "userId" FROM messages WHERE "problemId" = :problemId AND sender_id NOT IN (1, 2)
 )
 SELECT 
     au."userId",
     rs."pass",
     rs."created_time",
-	rs."submissionId",
-	rs."problemId",
+    rs."submissionId",
+    rs."problemId",
     COALESCE(sc."num_subs", 0) AS "num_subs",
     COALESCE(mc."num_messages", 0) AS "num_messages"
 FROM 
@@ -191,7 +191,6 @@ LEFT JOIN
     MessageCounts mc
 ON 
     au."userId" = mc."userId";
-
 
 `,
 			{
@@ -222,7 +221,7 @@ WITH RecentSubmissions AS (
     FROM 
         submissions
     WHERE 
-        "problemId" = :problemId AND "userId" = :sender_id
+        "problemId" = :problemId AND "userId" = :userId
 ),
 SubmissionCounts AS (
     SELECT 
@@ -231,7 +230,7 @@ SubmissionCounts AS (
     FROM 
         submissions
     WHERE 
-        "problemId" = :problemId AND "userId" = :sender_id
+        "problemId" = :problemId AND "userId" = :userId
     GROUP BY 
         "userId"
 ),
@@ -242,14 +241,14 @@ MessageCounts AS (
     FROM 
         messages
     WHERE 
-        "problemId" = :problemId AND sender_id = :sender_id
+        "problemId" = :problemId AND sender_id = :userId
     GROUP BY 
         sender_id
 ),
 AllUsers AS (
-    SELECT DISTINCT "userId" FROM submissions WHERE "problemId" = :problemId AND "userId" = :sender_id
+    SELECT DISTINCT "userId" FROM submissions WHERE "problemId" = :problemId AND "userId" = :userId
     UNION
-    SELECT DISTINCT sender_id AS "userId" FROM messages WHERE "problemId" = :problemId AND sender_id = :sender_id
+    SELECT DISTINCT sender_id AS "userId" FROM messages WHERE "problemId" = :problemId AND sender_id = :userId
 )
 SELECT 
     au."userId",
