@@ -12,32 +12,26 @@ passport.use(new LocalStrategy(
   },
   async (email, password, done) => {
     try {
-      const instructor = await authService.validatePassword(email, password)
-      if (!instructor) {
+      const user = await authService.validatePassword(email, password)
+      if (!user) {
         return done(null, false, { message: 'Incorrect password.' })
       }
-      return done(null, instructor)
+      return done(null, user)
     } catch (error) {
       return done(error)
     }
   }
 ))
 
-passport.serializeUser((instructor, done) => {
-  console.log(instructor)
-  done(null, {id: instructor.id ,type: instructor.role==1?"instructor":"student"})
+passport.serializeUser((user, done) => {
+  console.log(user)
+  done(null, user.userId)
 })
 
 passport.deserializeUser(async (id, done) => {
   try {
-    if(id.type== "instructor"){
-      const instructor = await Instructor.findByPk(id)
-      done(null, instructor)
-    }
-    else{
-      const student = await User.findByPk(id)
-      done(null, student)
-    }
+    const student = await User.findByPk(id)
+    done(null, student)
   } catch (error) {
     done(error)
   }
